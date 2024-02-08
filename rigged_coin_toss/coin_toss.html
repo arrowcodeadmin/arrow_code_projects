@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rigged Coin Toss</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+        }
+        html {
+            width: 100%;
+            height: 100%;
+        }
+        body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            box-shadow: inset 0 0 400px rgba(0, 0, 0, 0.7);
+        }
+        .coindiv {
+            flex: 1;
+        }
+        .textcontent {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #cointossbutton {
+            width: 30%;
+            padding: 8px;
+            border: 1px solid;
+            border-radius: 4px;
+            margin-left: 5rem;
+            font-family: "Roboto";
+            font-size: 1rem;
+            font-weight: bold;
+            transition: color 1s, background-color 1s;
+        }
+        
+        .button-disabled {
+            cursor: context-menu;
+            background-color: lightgrey;
+            color: black;
+            border-color: lightgrey;
+        }
+        .button-enabled {
+            background-color: transparent;
+            cursor: pointer;
+            color: white;
+            border-color: white;
+        }
+        h1 {
+            font-family: "Roboto";
+            font-size: 1.5rem;
+            font-weight: 100;
+            padding-left:5rem;
+            color: white;
+            padding-bottom: 2rem;
+        }
+        
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column-reverse;
+            }
+            .textcontent {
+                text-align: center;
+                align-items: center;
+            }
+            #cointossbutton {
+                margin-left: 0;
+                width: 50%;
+                padding-top: 16px;
+                padding-bottom: 16px;
+                font-size: 1.6rem;
+            }
+            h1 {
+                font-size: 2rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+                padding-bottom: 40px;
+                margin: 10px;
+            }
+        }
+
+        @media only screen and (max-width:768px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+            #cointossbutton {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.js"></script>
+<body bgcolor="#181a1b">
+    <!--Get your head up and face the right side, Grab your tail and be left behind!
+    Have fun
+    - Arrow Code Devs-->
+    <div class="textcontent">
+        <h1>Seize control of fate with this <b>unique</b> coin toss</h1>
+        <button id="cointossbutton" class="button-enabled">Toss The Coin</button>
+    </div>
+    <div class="coindiv" id="coindiv"></div>
+    <script>
+        const cointossbutton = document.getElementById("cointossbutton");
+        const scene = new THREE.Scene();
+        coindiv = document.getElementById("coindiv");
+        coindiv_w = coindiv.offsetWidth;
+        coindiv_h = coindiv.offsetHeight;
+        const camera = new THREE.PerspectiveCamera(45, coindiv_w / coindiv_h, 0.1, 1000);
+        camera.position.x = -5;
+        camera.position.y = 6;
+        camera.lookAt(0, 0, 0);
+        const renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+        renderer.setSize(coindiv_w, coindiv_h);
+        coindiv.appendChild(renderer.domElement);
+        let radius = 0;
+        if (window.innerWidth < 992) {
+            radius = 1.2;
+        } else {
+            radius = 0.8;
+        }
+        const geometry = new THREE.CylinderGeometry(radius, radius, 0.1, 200);
+        const textureHead = new THREE.TextureLoader().load('Heads.jpeg', function() {
+            renderer.render(scene, camera);
+        });
+        const textureTail = new THREE.TextureLoader().load('Tails.jpeg', function() {
+            renderer.render(scene, camera);
+        });
+        const materialHead = new THREE.MeshPhongMaterial({ map: textureHead });
+        const materialTail = new THREE.MeshPhongMaterial({ map: textureTail });
+        const materials = [materialHead, materialHead, materialTail];
+        const coin = new THREE.Mesh(geometry, materials);
+        scene.add(coin);
+
+        const light = new THREE.AmbientLight(0x404040);
+        light.intensity = 40;
+        scene.add(light);
+        renderer.render(scene, camera);
+
+        let isAnimating = false;
+        let d = 2;
+
+        function toss_coin(decision) {
+            console.log("TOSS COIN RUNNING");
+            isAnimating = true;
+            d = decision;
+            animate();
+            setTimeout(function() {
+                cointossbutton.classList.remove("button-disabled");
+                cointossbutton.classList.add("button-enabled");
+                cointossbutton.innerHTML = "Toss The Coin";
+                cointossbutton.addEventListener('click', handleClick);
+                console.log("DONE1");
+            }, 3500);
+            console.log("DONE2");
+        }
+
+        function animate() {
+            if (isAnimating) {
+                console.log("ANIMATE RUNNING");
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+                start_tossing(d);
+            } else {
+                console.log("ANIMATE STOPPED");
+                renderer.render(scene, camera);
+            }
+        };
+
+        function start_tossing(decision) {
+            start_rotation();
+            setTimeout(function() {
+                end_rotation();
+                setTimeout(function() {
+                    drop_coin(decision);
+                }, 1000);
+            }, 1000);
+        }
+
+        function start_rotation() {
+            coin.rotation.z += coin.position.y * Math.PI/12;
+            coin.position.y += 0.03;
+        }
+
+        function end_rotation(){
+            coin.rotation.z += 1.22 * Math.PI/12;
+            coin.position.y -= 0.06;
+        }
+
+        function drop_coin(dec) {
+            if (dec == 0) {
+                coin.rotation.z = Math.PI;
+                coin.position.y = 0;
+            } else if (dec == 1) {
+                coin.rotation.z = 0;
+                coin.position.y = 0;
+            } else {
+                console.log("DO NOTHING");
+            }
+            reset_everything();
+        }
+
+        function reset_everything() {
+            isAnimating = false;
+            coin.position.y = 0;
+        }
+
+        cointossbutton.addEventListener('click', handleClick);
+        
+        function handleClick(e) {
+            cointossbutton.removeEventListener('click', handleClick);
+            cointossbutton.classList.remove("button-enabled");
+            cointossbutton.classList.add("button-disabled");
+            cointossbutton.innerHTML = "Please Wait";
+            console.log(cointossbutton.innerHTML);
+            const button_w = cointossbutton.offsetWidth;
+            const button_l = cointossbutton.getBoundingClientRect().left;
+            const mouseX = e.clientX;
+            if (mouseX < button_l + button_w / 2) {
+                toss_coin(0);
+            }
+            else {
+                toss_coin(1);
+            }
+        }
+    </script>
+</body>
+</html>
